@@ -1,7 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "GASSynergiesTutorialPawn.h"
-#include "GASSynergiesTutorialProjectile.h"
+#include "GSTCharacter.h"
+
+#include "AbilitySystemComponent.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
@@ -10,15 +11,18 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
+#include "GASSynergiesTutorial/GASSynergiesTutorialProjectile.h"
+#include "GASSynergiesTutorial/Abilities/GSTAbilitySystemComponent.h"
+#include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 
-const FName AGASSynergiesTutorialPawn::MoveForwardBinding("MoveForward");
-const FName AGASSynergiesTutorialPawn::MoveRightBinding("MoveRight");
-const FName AGASSynergiesTutorialPawn::FireForwardBinding("FireForward");
-const FName AGASSynergiesTutorialPawn::FireRightBinding("FireRight");
+const FName AGSTCharacter::MoveForwardBinding("MoveForward");
+const FName AGSTCharacter::MoveRightBinding("MoveRight");
+const FName AGSTCharacter::FireForwardBinding("FireForward");
+const FName AGSTCharacter::FireRightBinding("FireRight");
 
-AGASSynergiesTutorialPawn::AGASSynergiesTutorialPawn()
+AGSTCharacter::AGSTCharacter()
 {	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ShipMesh(TEXT("/Game/TwinStick/Meshes/TwinStickUFO.TwinStickUFO"));
 	// Create the mesh component
@@ -50,9 +54,39 @@ AGASSynergiesTutorialPawn::AGASSynergiesTutorialPawn()
 	GunOffset = FVector(90.f, 0.f, 0.f);
 	FireRate = 0.1f;
 	bCanFire = true;
+
+	// Create GAS components
+	AbilitySystemComponent = CreateDefaultSubobject<UGSTAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AttributeSet = CreateDefaultSubobject<UGSTEquipmentAttributeSet>(TEXT("AttributeSet"));
+
+	// Ensure the AbilitySystemComponent replicates
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 }
 
-void AGASSynergiesTutorialPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+void AGSTCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	// Grant default abilities
+	if (HasAuthority() && AbilitySystemComponent)
+	{
+		for (TSubclassOf<UGameplayAbility> AbilityClass : DefaultAbilities)
+		{
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE, this));
+		}
+
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+		AbilitySystemComponent->InitStats(UGSTEquipmentAttributeSet::StaticClass(), nullptr);
+	}
+}
+
+UAbilitySystemComponent* AGSTCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+void AGSTCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	check(PlayerInputComponent);
 
@@ -63,7 +97,7 @@ void AGASSynergiesTutorialPawn::SetupPlayerInputComponent(class UInputComponent*
 	PlayerInputComponent->BindAxis(FireRightBinding);
 }
 
-void AGASSynergiesTutorialPawn::Tick(float DeltaSeconds)
+void AGSTCharacter::Tick(float DeltaSeconds)
 {
 	// Find movement direction
 	const float ForwardValue = GetInputAxisValue(MoveForwardBinding);
@@ -99,7 +133,7 @@ void AGASSynergiesTutorialPawn::Tick(float DeltaSeconds)
 	FireShot(FireDirection);
 }
 
-void AGASSynergiesTutorialPawn::FireShot(FVector FireDirection)
+void AGSTCharacter::FireShot(FVector FireDirection)
 {
 	// If it's ok to fire again
 	if (bCanFire == true)
@@ -119,7 +153,7 @@ void AGASSynergiesTutorialPawn::FireShot(FVector FireDirection)
 			}
 
 			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &AGASSynergiesTutorialPawn::ShotTimerExpired, FireRate);
+			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &AGSTCharacter::ShotTimerExpired, FireRate);
 
 			// try and play the sound if specified
 			if (FireSound != nullptr)
@@ -132,8 +166,51 @@ void AGASSynergiesTutorialPawn::FireShot(FVector FireDirection)
 	}
 }
 
-void AGASSynergiesTutorialPawn::ShotTimerExpired()
+void AGSTCharacter::ShotTimerExpired()
 {
 	bCanFire = true;
+}
+
+void AGSTCharacter::StartBurrowing()
+{
+	OriginalZ = GetActorLocation().Z;
+	BurrowedZ = OriginalZ - 200.0f; // Move down 200 units
+
+	// ✅ Smoothly move down
+	GetWorld()->GetTimerManager().SetTimer(MovementTimerHandle, this, &AGSTCharacter::MoveToBurrow, 0.01f, true);
+}
+
+void AGSTCharacter::MoveToBurrow()
+{
+	FVector CurrentLocation = GetActorLocation();
+	FVector NewLocation = FVector(CurrentLocation.X, CurrentLocation.Y, 
+								  FMath::FInterpTo(CurrentLocation.Z, BurrowedZ, GetWorld()->GetDeltaSeconds(), 5.0f));
+
+	SetActorLocation(NewLocation);
+
+	if (FMath::Abs(CurrentLocation.Z - BurrowedZ) < 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(MovementTimerHandle);
+	}
+}
+
+void AGSTCharacter::EndBurrowing()
+{
+	// ✅ Smoothly move back up
+	GetWorld()->GetTimerManager().SetTimer(MovementTimerHandle, this, &AGSTCharacter::MoveToSurface, 0.01f, true);
+}
+
+void AGSTCharacter::MoveToSurface()
+{
+	FVector CurrentLocation = GetActorLocation();
+	FVector NewLocation = FVector(CurrentLocation.X, CurrentLocation.Y, 
+								  FMath::FInterpTo(CurrentLocation.Z, OriginalZ, GetWorld()->GetDeltaSeconds(), 5.0f));
+
+	SetActorLocation(NewLocation);
+
+	if (FMath::Abs(CurrentLocation.Z - OriginalZ) < 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(MovementTimerHandle);
+	}
 }
 

@@ -3,11 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
-#include "GASSynergiesTutorialPawn.generated.h"
+#include "GSTCharacter.generated.h"
+
+class UGameplayAbility;
+class UGSTEquipmentAttributeSet;
+class UGSTAbilitySystemComponent;
 
 UCLASS(Blueprintable)
-class AGASSynergiesTutorialPawn : public APawn
+class AGSTCharacter : public APawn, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -24,7 +29,9 @@ class AGASSynergiesTutorialPawn : public APawn
 	class USpringArmComponent* CameraBoom;
 
 public:
-	AGASSynergiesTutorialPawn();
+	AGSTCharacter();
+
+	virtual void BeginPlay() override;
 
 	/** Offset from the ships location to spawn projectiles */
 	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite )
@@ -59,6 +66,22 @@ public:
 	static const FName FireForwardBinding;
 	static const FName FireRightBinding;
 
+	/** Implement GAS interface */
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+protected:
+	/** Ability System Component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+	UGSTAbilitySystemComponent* AbilitySystemComponent;
+
+	/** Attribute Set for character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
+	UGSTEquipmentAttributeSet* AttributeSet;
+
+	/** Default abilities granted on spawn */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
+
 private:
 
 	/* Flag to control firing  */
@@ -66,6 +89,21 @@ private:
 
 	/** Handle for efficient management of ShotTimerExpired timer */
 	FTimerHandle TimerHandle_ShotTimerExpired;
+
+public:
+	/** Moves the skimmer underground */
+	void StartBurrowing();
+
+	/** Moves the skimmer back to the surface */
+	void EndBurrowing();
+
+private:
+	float OriginalZ;
+	float BurrowedZ;
+	FTimerHandle MovementTimerHandle;
+
+	void MoveToBurrow();
+	void MoveToSurface();
 
 public:
 	/** Returns ShipMeshComponent subobject **/

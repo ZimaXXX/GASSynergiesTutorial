@@ -20,7 +20,9 @@ bool UGSTEquipmentAbility::IsSkimmerOverMaterial(FGameplayTag MaterialTag)
 
 		FHitResult HitResult;
 		FCollisionQueryParams CollisionParams;
+		CollisionParams.bTraceComplex = true;
 		CollisionParams.AddIgnoredActor(OwnerActor);
+		CollisionParams.bReturnPhysicalMaterial = true;
 
 		// Perform a LineTrace downward to check surface below the skimmer
 		if (OwnerActor->GetWorld()->LineTraceSingleByChannel(
