@@ -49,12 +49,7 @@ void UGSTJawsAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("JawsAbility failed to commit!"));
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-        return;
-    }
+
     
     if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
     {
@@ -91,8 +86,12 @@ void UGSTJawsAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
                                  const FGameplayAbilityActivationInfo ActivationInfo, 
                                  bool bReplicateEndAbility, bool bWasCancelled)
 {
-    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
+    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))//commit on endability so cooldown starts to count from burrowing up
+    {
+        UE_LOG(LogTemp, Warning, TEXT("JawsAbility failed to commit!"));
+    }
+    
     if(GetOwningActorFromActorInfo() && GetOwningActorFromActorInfo()->GetInstigatorController())//may fail on closing PIE
     {
         AGSTCharacter* Skimmer = Cast<AGSTCharacter>(GetOwningActorFromActorInfo()->GetInstigatorController()->GetPawn());
@@ -116,6 +115,8 @@ void UGSTJawsAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
     }
 
     UE_LOG(LogTemp, Warning, TEXT("Jaws Ability Ended: Skimmer is Out of Burrow!"));
+
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
 void UGSTJawsAbility::AutoEndBurrow()
