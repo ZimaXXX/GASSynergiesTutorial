@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "GSTCharacter.generated.h"
 
+class UFloatingPawnMovement;
 class UGameplayAbility;
 class UGSTEquipmentAttributeSet;
 class UGSTAbilitySystemComponent;
@@ -77,6 +78,9 @@ protected:
 	/** Ability System Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	UGSTAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	UFloatingPawnMovement* FloatingMovement;
 
 	/** Attribute Set for character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")

@@ -1,0 +1,112 @@
+﻿#include "GSTHarpoonProjectile.h"
+
+#include "Components/SphereComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "GameFramework/FloatingPawnMovement.h"
+#include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
+#include "GASSynergiesTutorial/Core/GSTCharacter.h"
+#include "CableComponent.h"
+
+AGSTHarpoonProjectile::AGSTHarpoonProjectile()
+{
+    PrimaryActorTick.bCanEverTick = false;
+
+    SceneRootComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
+    SceneRootComponent->SetCollisionProfileName("BlockAll");
+    SceneRootComponent->bReturnMaterialOnMove = true;
+    RootComponent = SceneRootComponent;
+    
+    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+    MeshComponent->SetupAttachment(RootComponent);    
+
+    ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
+    ProjectileMovement->InitialSpeed = 3000.0f;
+    ProjectileMovement->MaxSpeed = 3000.0f;
+    ProjectileMovement->bRotationFollowsVelocity = true;
+    ProjectileMovement->ProjectileGravityScale = 0.0f;
+
+    CableComponent = CreateDefaultSubobject<UCableComponent>(TEXT("CableComponent"));
+    CableComponent->SetupAttachment(RootComponent);  // Attach to harpoon
+    CableComponent->CableLength = 1500.0f;  // Adjust based on harpoon range
+    CableComponent->NumSegments = 10;  // Smoother rope look
+    CableComponent->SolverIterations = 8;  // More realistic physics
+    CableComponent->SetHiddenInGame(false);  // Ensure visibility
+}
+
+void AGSTHarpoonProjectile::InitializeProjectile(AActor* InOwner, float Speed, float Range, float InPullVelocityMultiplier)
+{
+    OwnerSkimmer = InOwner;
+    ProjectileMovement->InitialSpeed = Speed;
+    ProjectileMovement->MaxSpeed = Speed;
+    PullVelocityMultiplier = InPullVelocityMultiplier;
+    CableComponent->CableLength = Range;
+
+    SetLifeSpan(Range / Speed); // Destroy after reaching range
+
+    if (OwnerSkimmer)
+    {
+        CableComponent->SetAttachEndTo(OwnerSkimmer, FName("RootComponent"));
+        // Ignore the skimmer to prevent self-collision
+        MeshComponent->IgnoreActorWhenMoving(OwnerSkimmer, true);
+
+        // Ignore collisions dynamically
+        UPrimitiveComponent* SkimmerRoot = Cast<UPrimitiveComponent>(OwnerSkimmer->GetRootComponent());
+        if (SkimmerRoot)
+        {
+            SkimmerRoot->IgnoreActorWhenMoving(this, true);
+        }
+    }
+}
+
+void AGSTHarpoonProjectile::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
+bool AGSTHarpoonProjectile::IsValidHarpoonSurface(const FHitResult& Hit) const
+{
+    if (Hit.PhysMaterial.IsValid())
+    {
+        UGSTPhysicalMaterialWithTags* PhysMat = Cast<UGSTPhysicalMaterialWithTags>(Hit.PhysMaterial.Get());
+        if (PhysMat && PhysMat->MaterialTags.HasTag(FGameplayTag::RequestGameplayTag("Material.Rock")))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void AGSTHarpoonProjectile::NotifyHit(UPrimitiveComponent* MyComp, AActor* OtherActor,
+                                      UPrimitiveComponent* OtherComp, bool bSelfMoved,
+                                      FVector HitLocation, FVector HitNormal, FVector NormalImpulse,
+                                      const FHitResult& Hit)
+{
+    if (!IsValidHarpoonSurface(Hit))
+    {
+        if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr) && OtherComp->IsSimulatingPhysics())
+        {
+            OtherComp->AddImpulseAtLocation(GetVelocity() * 20.0f, GetActorLocation());
+        }
+        
+        UE_LOG(LogTemp, Warning, TEXT("Harpoon hit an invalid surface! Destroying."));
+        Destroy();
+        return;
+    }
+    
+    AGSTCharacter* Skimmer = Cast<AGSTCharacter>(OwnerSkimmer);
+    if (Skimmer)
+    {
+        FVector PullDirection = (HitLocation - Skimmer->GetActorLocation()).GetSafeNormal();
+
+        if (UFloatingPawnMovement* FloatingMovement = Skimmer->FindComponentByClass<UFloatingPawnMovement>())
+        {
+            PullVelocityMultiplier = 5;
+            FloatingMovement->Velocity = PullDirection * FloatingMovement->MaxSpeed * PullVelocityMultiplier;
+        }
+    }
+
+    Destroy();
+}

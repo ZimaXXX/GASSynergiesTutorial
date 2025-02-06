@@ -11,6 +11,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
+#include "GameFramework/FloatingPawnMovement.h"
 #include "GASSynergiesTutorial/GASSynergiesTutorialProjectile.h"
 #include "GASSynergiesTutorial/Abilities/GSTAbilitySystemComponent.h"
 #include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
@@ -63,6 +64,9 @@ AGSTCharacter::AGSTCharacter()
 	// Ensure the AbilitySystemComponent replicates
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+
+	FloatingMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingMovement"));
+	FloatingMovement->MaxSpeed = 1200.0f;
 }
 
 void AGSTCharacter::BeginPlay()

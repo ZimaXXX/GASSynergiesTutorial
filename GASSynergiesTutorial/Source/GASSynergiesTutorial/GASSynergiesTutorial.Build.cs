@@ -8,6 +8,6 @@ public class GASSynergiesTutorial : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "GameplayTags", "GameplayAbilities", "GameplayTasks", "PhysicsCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "GameplayTags", "GameplayAbilities", "GameplayTasks", "PhysicsCore", "EnhancedInput", "CableComponent" });
 	}
 }
