@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/Character.h"
 #include "GSTCharacter.generated.h"
 
@@ -32,6 +33,8 @@ public:
 	AGSTCharacter();
 
 	virtual void BeginPlay() override;
+	
+	bool IsSkimmerOverMaterial(FGameplayTag MaterialTag) const;
 
 	/** Offset from the ships location to spawn projectiles */
 	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite )
@@ -59,6 +62,7 @@ public:
 
 	/* Handler for the fire timer expiry */
 	void ShotTimerExpired();
+	void OnBurrowStarted();
 
 	// Static names for axis bindings
 	static const FName MoveForwardBinding;
@@ -96,6 +100,10 @@ public:
 
 	/** Moves the skimmer back to the surface */
 	void EndBurrowing();
+	void OnBurrowFinished();
+
+	UFUNCTION(BlueprintPure, Category = "Abilities")
+	bool IsBuried() const;
 
 private:
 	float OriginalZ;

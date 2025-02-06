@@ -13,6 +13,7 @@
 #include "Engine/StaticMesh.h"
 #include "GASSynergiesTutorial/GASSynergiesTutorialProjectile.h"
 #include "GASSynergiesTutorial/Abilities/GSTAbilitySystemComponent.h"
+#include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
 #include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -81,6 +82,26 @@ void AGSTCharacter::BeginPlay()
 	}
 }
 
+bool AGSTCharacter::IsSkimmerOverMaterial(FGameplayTag MaterialTag) const
+{
+	FVector StartLocation = GetActorLocation();
+	FVector EndLocation = StartLocation + FVector(0, 0, -500); // Raycast 500 units downward
+
+	FHitResult HitResult;
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActor(this);
+	CollisionParams.bReturnPhysicalMaterial = true; // Ensure we get the PhysMaterial
+
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, CollisionParams);
+
+	if (bHit && HitResult.PhysMaterial.IsValid())
+	{
+		UGSTPhysicalMaterialWithTags* PhysMat = Cast<UGSTPhysicalMaterialWithTags>(HitResult.PhysMaterial.Get());
+		return PhysMat && PhysMat->MaterialTags.HasTag(MaterialTag);
+	}
+
+	return false;
+}
 UAbilitySystemComponent* AGSTCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
@@ -171,12 +192,18 @@ void AGSTCharacter::ShotTimerExpired()
 	bCanFire = true;
 }
 
-void AGSTCharacter::StartBurrowing()
+void AGSTCharacter::OnBurrowStarted()
 {
+	SetActorEnableCollision(false);
 	OriginalZ = GetActorLocation().Z;
 	BurrowedZ = OriginalZ - 200.0f; // Move down 200 units
+}
 
-	// ✅ Smoothly move down
+void AGSTCharacter::StartBurrowing()
+{
+    OnBurrowStarted();
+
+	// Smoothly move down
 	GetWorld()->GetTimerManager().SetTimer(MovementTimerHandle, this, &AGSTCharacter::MoveToBurrow, 0.01f, true);
 }
 
@@ -196,8 +223,29 @@ void AGSTCharacter::MoveToBurrow()
 
 void AGSTCharacter::EndBurrowing()
 {
-	// ✅ Smoothly move back up
+	if(!IsBuried())
+	{
+		return;
+	}
+	// Smoothly move back up
 	GetWorld()->GetTimerManager().SetTimer(MovementTimerHandle, this, &AGSTCharacter::MoveToSurface, 0.01f, true);
+}
+
+void AGSTCharacter::OnBurrowFinished()
+{
+	FVector CurrentLocation = GetActorLocation();
+	FVector NewLocation = FVector(CurrentLocation.X, CurrentLocation.Y, OriginalZ);
+	SetActorLocation(NewLocation);	
+	SetActorEnableCollision(true);
+}
+
+bool AGSTCharacter::IsBuried() const
+{
+	if (AbilitySystemComponent)
+	{
+		return AbilitySystemComponent->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("State.Buried"));
+	}
+	return false;
 }
 
 void AGSTCharacter::MoveToSurface()
@@ -211,6 +259,7 @@ void AGSTCharacter::MoveToSurface()
 	if (FMath::Abs(CurrentLocation.Z - OriginalZ) < 1.0f)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(MovementTimerHandle);
+		OnBurrowFinished();
 	}
 }
 

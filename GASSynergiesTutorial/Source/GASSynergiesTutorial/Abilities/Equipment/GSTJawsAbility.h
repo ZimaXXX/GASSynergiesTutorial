@@ -12,6 +12,10 @@ class GASSYNERGIESTUTORIAL_API UGSTJawsAbility : public UGSTEquipmentAbility
 public:
 	UGSTJawsAbility();
 
+	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags,
+	FGameplayTagContainer* OptionalRelevantTags) const override;
+	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 								 const FGameplayAbilityActorInfo* ActorInfo, 
