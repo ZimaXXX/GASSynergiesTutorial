@@ -1,22 +1,15 @@
 ﻿#include "GSTCannonAbility.h"
 #include "AbilitySystemComponent.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "TimerManager.h"
+#include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "GASSynergiesTutorial/Core/GSTCharacter.h"
 #include "GASSynergiesTutorial/Projectiles/GSTCannonProjectile.h"
-#include "TargetActors/GSTCannonTargetActor.h"
 
 UGSTCannonAbility::UGSTCannonAbility()
 {
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
-}
-
-bool UGSTCannonAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                           const FGameplayAbilityActorInfo* ActorInfo,
-                                           const FGameplayTagContainer* SourceTags,
-                                           const FGameplayTagContainer* TargetTags,
-                                           FGameplayTagContainer* OptionalRelevantTags) const
-{
-    return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
 }
 
 void UGSTCannonAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -32,36 +25,38 @@ void UGSTCannonAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    // ✅ Create the targeting actor
-    AGSTCannonTargetActor* TargetActor = GetWorld()->SpawnActor<AGSTCannonTargetActor>(TargetActorClass);
-    if (!TargetActor)
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-        return;
-    }
-    
-    TargetActor->StartTargeting(this);
-
-    TargetActor->TargetDataReadyDelegate.AddUObject(this, &UGSTCannonAbility::OnTargetDataReceived);
+    // Start continuous enemy lookup
+    LookForEnemies();
 }
 
-
-void UGSTCannonAbility::OnTargetDataReceived(const FGameplayAbilityTargetDataHandle& Data)
+void UGSTCannonAbility::LookForEnemies()
 {
-    if (Data.Data.IsValidIndex(0))
-    {
-        const FGameplayAbilityTargetData_SingleTargetHit* TargetData =
-            static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(Data.Data[0].Get());
+    //DrawDebugAimAssist();
+    // Look for closest enemy
+    AActor* ClosestEnemy = FindClosestValidEnemy();
 
-        if (TargetData && IsValid(TargetData->HitResult.GetActor()))
-        {
-            FireCannon(TargetData->HitResult.GetActor());
-            return;
-        }
+    if (ClosestEnemy)
+    {
+        // Check if we can fire at this enemy
+        CheckIfCanFire();
     }
 
-    // No valid target found, just fire forward
-    FireCannon(nullptr);
+    // Set a repeating timer to continuously look for enemies
+    GetWorld()->GetTimerManager().SetTimer(EnemyLookupTimerHandle, this, &UGSTCannonAbility::LookForEnemies, LookUpRate, false);
+}
+
+void UGSTCannonAbility::CheckIfCanFire()
+{
+    if (IsInCooldown())
+    {
+        return; // Don't fire if still on cooldown
+    }
+
+    AActor* ClosestEnemy = FindClosestValidEnemy();
+    if (ClosestEnemy)
+    {
+        FireCannon(ClosestEnemy);
+    }
 }
 
 void UGSTCannonAbility::FireCannon(AActor* TargetActor)
@@ -69,11 +64,12 @@ void UGSTCannonAbility::FireCannon(AActor* TargetActor)
     AGSTCharacter* Skimmer = Cast<AGSTCharacter>(GetCurrentActorInfo()->OwnerActor);
     if (!Skimmer || !CannonProjectileClass)
     {
-        EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);
         return;
     }
 
-    FVector SpawnLocation = Skimmer->GetActorLocation(); // ✅ Spawn inside the ship
+    FVector SpawnLocation = Skimmer->GetActorLocation();
+    FVector RightDirection = Skimmer->GetActorRightVector();
+    FVector LeftDirection = -RightDirection;
     FRotator SpawnRotation;
 
     if (TargetActor)
@@ -83,11 +79,11 @@ void UGSTCannonAbility::FireCannon(AActor* TargetActor)
     }
     else
     {
-        FVector RightDirection = Skimmer->GetActorRightVector();
-        SpawnRotation = RightDirection.Rotation();
+        bool bFireRight = FMath::RandBool();
+        FVector ChosenDirection = bFireRight ? RightDirection : LeftDirection;
+        SpawnRotation = ChosenDirection.Rotation();
     }
 
-    // ✅ Spawn projectile inside the ship
     AGSTCannonProjectile* Projectile = GetWorld()->SpawnActor<AGSTCannonProjectile>(
         CannonProjectileClass, SpawnLocation, SpawnRotation);
 
@@ -95,8 +91,70 @@ void UGSTCannonAbility::FireCannon(AActor* TargetActor)
     {
         Projectile->InitializeProjectile(Skimmer, MaxRange);
     }
+
+    // Start cooldown timer
+    UAbilitySystemComponent* ASC = Skimmer->GetAbilitySystemComponent();
+    if (ASC)
+    {
+        const UGSTEquipmentAttributeSet* Attributes = ASC->GetSet<UGSTEquipmentAttributeSet>();
+        if (Attributes)
+        {
+            float FireRate = Attributes->GetFireRate();
+            float FireCooldown = (FireRate > 0.0f) ? (1.0f / FireRate) : 1.0f;
+            GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &UGSTCannonAbility::CheckIfCanFire, FireCooldown, false);
+        }
+    }
 }
 
+AActor* UGSTCannonAbility::FindClosestValidEnemy()
+{
+    AGSTCharacter* Skimmer = Cast<AGSTCharacter>(GetCurrentActorInfo()->OwnerActor);
+    if (!Skimmer)
+    {
+        return nullptr;
+    }
+
+    FVector StartLocation = Skimmer->GetActorLocation();
+    FVector RightDirection = Skimmer->GetActorRightVector();
+    FVector LeftDirection = -RightDirection;
+
+    float ClosestDistance = MaxRange;
+    AActor* ClosestEnemy = nullptr;
+
+    TArray<AActor*> PotentialTargets;
+    UKismetSystemLibrary::SphereOverlapActors(this, StartLocation, MaxRange,
+        { UEngineTypes::ConvertToObjectType(ECC_Pawn) }, nullptr, { Skimmer }, PotentialTargets);
+
+    for (AActor* Target : PotentialTargets)
+    {
+        if (!Target || Target == Skimmer)
+        {
+            continue;
+        }
+
+        FVector DirectionToTarget = (Target->GetActorLocation() - StartLocation).GetSafeNormal();
+        float RightDotProduct = FVector::DotProduct(DirectionToTarget, RightDirection);
+        float TargetAngle = FMath::Acos(RightDotProduct) * (180.0f / PI);
+
+        // Ensure the target is within the allowed angle range for BOTH sides
+        if (TargetAngle <= AllowedAimAngle * 0.5f || TargetAngle >= (180.0f - AllowedAimAngle * 0.5f))
+        {
+            float Distance = FVector::Dist(Target->GetActorLocation(), StartLocation);
+            if (Distance < ClosestDistance)
+            {
+                ClosestDistance = Distance;
+                ClosestEnemy = Target;
+            }
+        }
+    }
+
+    return ClosestEnemy;
+}
+
+bool UGSTCannonAbility::IsInCooldown()
+{
+    return GetWorld()->GetTimerManager().IsTimerActive(FireTimerHandle);
+}
 
 void UGSTCannonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
                                    const FGameplayAbilityActorInfo* ActorInfo,
@@ -104,6 +162,35 @@ void UGSTCannonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
                                    bool bReplicateEndAbility,
                                    bool bWasCancelled)
 {
-    GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+    
+    // Clear both timers when ability ends
+    GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
+    GetWorld()->GetTimerManager().ClearTimer(EnemyLookupTimerHandle);
+}
+
+void UGSTCannonAbility::DrawDebugAimAssist()
+{
+
+    AGSTCharacter* Skimmer = Cast<AGSTCharacter>(GetCurrentActorInfo()->OwnerActor);
+    if (!Skimmer)
+    {
+        return;
+    }
+
+    FVector NewStartLocation = Skimmer->GetActorLocation();
+    FVector RightDirection = Skimmer->GetActorRightVector();
+    FVector LeftDirection = -RightDirection;
+    
+    FVector RightUpLimitDirection = RightDirection.RotateAngleAxis(-AllowedAimAngle * 0.5f, FVector::UpVector);
+    FVector RightDownLimitDirection = RightDirection.RotateAngleAxis(AllowedAimAngle * 0.5f, FVector::UpVector);
+
+    DrawDebugLine(GetWorld(), NewStartLocation, NewStartLocation + RightUpLimitDirection * MaxRange, FColor::Green, false, 0.5f, 0, 2.0f);
+    DrawDebugLine(GetWorld(), NewStartLocation, NewStartLocation + RightDownLimitDirection * MaxRange, FColor::Green, false, 0.5f, 0, 2.0f);
+
+    FVector LeftUpLimitDirection = LeftDirection.RotateAngleAxis(-AllowedAimAngle * 0.5f, FVector::UpVector);
+    FVector LeftDownLimitDirection = LeftDirection.RotateAngleAxis(AllowedAimAngle * 0.5f, FVector::UpVector);
+
+    DrawDebugLine(GetWorld(), NewStartLocation, NewStartLocation + LeftUpLimitDirection * MaxRange, FColor::Green, false, 0.5f, 0, 2.0f);
+    DrawDebugLine(GetWorld(), NewStartLocation, NewStartLocation + LeftDownLimitDirection * MaxRange, FColor::Green, false, 0.5f, 0, 2.0f);
 }

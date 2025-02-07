@@ -43,4 +43,5 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	FGameplayAttributeData BurrowMaxTime;
 	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, BurrowMaxTime)
+
 };

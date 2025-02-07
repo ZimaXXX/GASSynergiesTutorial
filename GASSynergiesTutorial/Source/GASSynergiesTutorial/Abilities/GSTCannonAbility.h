@@ -1,15 +1,13 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "GSTEquipmentAbility.h"
-#include "Abilities/GameplayAbilityTargetTypes.h"
+#include "Abilities/GameplayAbility.h"
 #include "GSTCannonAbility.generated.h"
 
 class AGSTCannonProjectile;
-class AGSTCannonTargetActor;
 
 UCLASS()
-class GASSYNERGIESTUTORIAL_API UGSTCannonAbility : public UGSTEquipmentAbility
+class GASSYNERGIESTUTORIAL_API UGSTCannonAbility : public UGameplayAbility
 {
     GENERATED_BODY()
 
@@ -17,12 +15,6 @@ public:
     UGSTCannonAbility();
 
 protected:
-    virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                    const FGameplayAbilityActorInfo* ActorInfo,
-                                    const FGameplayTagContainer* SourceTags,
-                                    const FGameplayTagContainer* TargetTags,
-                                    FGameplayTagContainer* OptionalRelevantTags) const override;
-
     virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                                  const FGameplayAbilityActorInfo* ActorInfo,
                                  const FGameplayAbilityActivationInfo ActivationInfo,
@@ -35,31 +27,42 @@ protected:
                             bool bWasCancelled) override;
 
 private:
+    /** Timer handle for controlling fire rate */
+    FTimerHandle FireTimerHandle;
+
+    /** Timer handle for continuously looking for enemies */
+    FTimerHandle EnemyLookupTimerHandle;
+
     /** The Cannon projectile class */
     UPROPERTY(EditDefaultsOnly, Category = "Cannon")
     TSubclassOf<AGSTCannonProjectile> CannonProjectileClass;
 
-    /** Targeting actor for finding closest enemy */
-    UPROPERTY(EditDefaultsOnly, Category = "Cannon")
-    TSubclassOf<AGSTCannonTargetActor> TargetActorClass;
-
-    /** The time between shots */
-    UPROPERTY(EditDefaultsOnly, Category = "Cannon")
-    float FireRate = 0.5f;
-
     /** Maximum range of the cannon */
     UPROPERTY(EditDefaultsOnly, Category = "Cannon")
     float MaxRange = 1500.0f;
+    
+    /** Maximum allowed horizontal deviation (e.g., 60° means 30° left and right) */
+    UPROPERTY(EditDefaultsOnly, Category = "Targeting")
+    float AllowedAimAngle = 30.0f;
 
-    /** Whether the cannon fires to the right (false = left) */
-    bool bFireRight = true;
-
-    /** Handles automatic firing */
-    FTimerHandle FireTimerHandle;
-
-    /** Handles the received target data */
-    void OnTargetDataReceived(const FGameplayAbilityTargetDataHandle& Data);
+    UPROPERTY(EditDefaultsOnly, Category = "Targeting")
+    float LookUpRate = 0.05f;
 
     /** Fires a projectile at the determined target */
     void FireCannon(AActor* TargetActor);
+
+    /** Called to check if we can fire */
+    void CheckIfCanFire();
+
+    /** Continuously looks for enemies */
+    void LookForEnemies();
+
+    /** Finds the closest valid enemy within the allowed angle range */
+    AActor* FindClosestValidEnemy();
+
+    /** Returns whether the cannon is in cooldown */
+    bool IsInCooldown();
+    
+    /** Draws debug lines to visualize valid shooting angles */
+    void DrawDebugAimAssist();
 };
