@@ -1,6 +1,9 @@
 ﻿#include "GSTCannonProjectile.h"
+
+#include "AbilitySystemComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
+#include "GASSynergiesTutorial/Enemy/GSTEnemyPawn.h"
 
 AGSTCannonProjectile::AGSTCannonProjectile()
 {
@@ -26,7 +29,7 @@ void AGSTCannonProjectile::InitializeProjectile(AActor* InOwner, float Range)
 	MaxRange = Range;
 	SetLifeSpan(Range / ProjectileMovement->MaxSpeed);
 
-	// ✅ Ensure the projectile ignores the ship's collision
+	// Ensure the projectile ignores the ship's collision
 	if (OwnerActor)
 	{
 		CollisionComponent->IgnoreActorWhenMoving(OwnerActor, true);
@@ -39,10 +42,31 @@ void AGSTCannonProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Othe
 								 UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 								 const FHitResult& Hit)
 {
-	// ✅ Ignore if the projectile hits the ship
+	// Ignore if the projectile hits the ship
 	if (OtherActor == OwnerActor)
 	{
 		return;
+	}
+	
+	AGSTEnemyPawn* Enemy = Cast<AGSTEnemyPawn>(OtherActor);
+	if (Enemy && DamageEffectClass)
+	{
+		UAbilitySystemComponent* EnemyASC = Enemy->GetAbilitySystemComponent();
+		if (EnemyASC)
+		{
+			// Create an effect spec
+			FGameplayEffectSpecHandle DamageEffect = EnemyASC->MakeOutgoingSpec(DamageEffectClass, 1.0f, EnemyASC->MakeEffectContext());
+
+			if (DamageEffect.IsValid())
+			{
+				// Apply dynamic damage value
+				DamageEffect.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Effect.Damage")), -DamageAmount);
+				EnemyASC->ApplyGameplayEffectSpecToSelf(*DamageEffect.Data.Get());
+
+				// Debug log
+				UE_LOG(LogTemp, Warning, TEXT("Projectile applied BP_GE_ApplyDamage to enemy: %s | Damage: %f"), *Enemy->GetName(), -DamageAmount);
+			}
+		}
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Cannon Projectile hit: %s"), *OtherActor->GetName());

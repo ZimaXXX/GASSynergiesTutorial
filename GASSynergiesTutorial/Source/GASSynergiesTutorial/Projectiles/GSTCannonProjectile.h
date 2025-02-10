@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayEffect.h"
 #include "GameFramework/Actor.h"
 #include "GSTCannonProjectile.generated.h"
 
@@ -35,4 +36,12 @@ private:
 	AActor* OwnerActor;
 
 	float MaxRange;
+	
+	/** Damage amount applied on hit */
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	float DamageAmount = 25.0f;
+
+	/** The GameplayEffect applied for damage */
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
 };

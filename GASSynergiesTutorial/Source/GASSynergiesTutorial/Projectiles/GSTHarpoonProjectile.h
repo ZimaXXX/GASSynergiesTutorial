@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "GSTHarpoonProjectile.generated.h"
 
+class UGameplayEffect;
 class UCableComponent;
 class USphereComponent;
 class UProjectileMovementComponent;
@@ -46,4 +47,14 @@ private:
 
 	/** Checks if the hit surface has the Material.Rock tag */
 	bool IsValidHarpoonSurface(const FHitResult& Hit) const;
+	
+	/** The GameplayEffect to apply for damage */
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
+
+	/** Damage amount applied when harpoon hits an enemy */
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	float DamageAmount = 10.0f;
+
+	void ApplyDamageToEnemy(AActor* HitEnemy);
 };

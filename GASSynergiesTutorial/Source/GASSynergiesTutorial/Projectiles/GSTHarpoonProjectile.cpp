@@ -1,5 +1,6 @@
 ﻿#include "GSTHarpoonProjectile.h"
 
+#include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -8,6 +9,8 @@
 #include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
 #include "GASSynergiesTutorial/Core/GSTCharacter.h"
 #include "CableComponent.h"
+#include "GameplayEffectTypes.h"
+#include "GASSynergiesTutorial/Enemy/GSTEnemyPawn.h"
 
 AGSTHarpoonProjectile::AGSTHarpoonProjectile()
 {
@@ -90,6 +93,12 @@ void AGSTHarpoonProjectile::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other
         {
             OtherComp->AddImpulseAtLocation(GetVelocity() * 20.0f, GetActorLocation());
         }
+
+        AGSTEnemyPawn* Enemy = Cast<AGSTEnemyPawn>(OtherActor);
+        if (Enemy)
+        {
+            ApplyDamageToEnemy(Enemy);
+        }
         
         UE_LOG(LogTemp, Warning, TEXT("Harpoon hit an invalid surface! Destroying."));
         Destroy();
@@ -109,4 +118,34 @@ void AGSTHarpoonProjectile::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other
     }
 
     Destroy();
+}
+
+void AGSTHarpoonProjectile::ApplyDamageToEnemy(AActor* HitEnemy)
+{
+    if (!DamageEffectClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Harpoon Projectile: No DamageEffectClass assigned!"));
+        return;
+    }
+
+    AGSTEnemyPawn* EnemyPawn = Cast<AGSTEnemyPawn>(HitEnemy);
+    if (!EnemyPawn)
+    {
+        return;
+    }
+
+    UAbilitySystemComponent* EnemyASC = EnemyPawn->GetAbilitySystemComponent();
+    if (!EnemyASC)
+    {
+        return;
+    }
+
+    FGameplayEffectSpecHandle DamageEffect = EnemyASC->MakeOutgoingSpec(DamageEffectClass, 1.0f, EnemyASC->MakeEffectContext());
+    if (DamageEffect.IsValid())
+    {
+        DamageEffect.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Effect.Damage")), -DamageAmount);
+        EnemyASC->ApplyGameplayEffectSpecToSelf(*DamageEffect.Data.Get());
+
+        UE_LOG(LogTemp, Warning, TEXT("Harpoon hit enemy: %s | Applied Damage: %f"), *EnemyPawn->GetName(), -DamageAmount);
+    }
 }
