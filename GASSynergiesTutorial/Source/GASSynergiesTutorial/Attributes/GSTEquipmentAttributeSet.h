@@ -44,4 +44,19 @@ public:
 	FGameplayAttributeData BurrowMaxTime;
 	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, BurrowMaxTime)
 
+	/** Harpoon Damage */
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+	FGameplayAttributeData HarpoonDamage;
+	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, HarpoonDamage);
+
+	/** Cannon Damage */
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+	FGameplayAttributeData CannonDamage;
+	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, CannonDamage);
+
+	/** Ball Lightning Damage */
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+	FGameplayAttributeData BallLightningDamage;
+	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, BallLightningDamage);
+
 };

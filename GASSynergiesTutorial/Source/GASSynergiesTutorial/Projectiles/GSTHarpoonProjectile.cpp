@@ -10,6 +10,7 @@
 #include "GASSynergiesTutorial/Core/GSTCharacter.h"
 #include "CableComponent.h"
 #include "GameplayEffectTypes.h"
+#include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "GASSynergiesTutorial/Enemy/GSTEnemyPawn.h"
 
 AGSTHarpoonProjectile::AGSTHarpoonProjectile()
@@ -66,6 +67,13 @@ void AGSTHarpoonProjectile::InitializeProjectile(AActor* InOwner, float Speed, f
 void AGSTHarpoonProjectile::BeginPlay()
 {
     Super::BeginPlay();
+
+    AActor* OwnerActor = GetOwner();
+    if (OwnerActor)
+    {
+        OwnerASC = OwnerActor->FindComponentByClass<UAbilitySystemComponent>();
+        OwnerAttributes = Cast<UGSTEquipmentAttributeSet>(OwnerASC->GetAttributeSet(UGSTEquipmentAttributeSet::StaticClass()));
+    }
 }
 
 bool AGSTHarpoonProjectile::IsValidHarpoonSurface(const FHitResult& Hit) const
@@ -140,12 +148,25 @@ void AGSTHarpoonProjectile::ApplyDamageToEnemy(AActor* HitEnemy)
         return;
     }
 
+    // Retrieve the Harpoon Damage attribute value
+    float AttributeDamage = BaseDamage;
+    if (OwnerAttributes && OwnerASC)
+    {
+        AttributeDamage = OwnerAttributes->GetHarpoonDamage();
+    }
+
+    if(AttributeDamage > 0)
+    {
+        AttributeDamage *= -1.f; // Damage needs to be negative
+    }
+   
+    // Apply the GameplayEffect with the dynamic damage value
     FGameplayEffectSpecHandle DamageEffect = EnemyASC->MakeOutgoingSpec(DamageEffectClass, 1.0f, EnemyASC->MakeEffectContext());
     if (DamageEffect.IsValid())
     {
-        DamageEffect.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Effect.Damage")), -DamageAmount);
+        DamageEffect.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Effect.Damage")), AttributeDamage);
         EnemyASC->ApplyGameplayEffectSpecToSelf(*DamageEffect.Data.Get());
 
-        UE_LOG(LogTemp, Warning, TEXT("Harpoon hit enemy: %s | Applied Damage: %f"), *EnemyPawn->GetName(), -DamageAmount);
+        UE_LOG(LogTemp, Warning, TEXT("Harpoon hit enemy: %s | Applied Damage: %f"), *EnemyPawn->GetName(), AttributeDamage);
     }
 }

@@ -7,4 +7,7 @@ UGSTEquipmentAttributeSet::UGSTEquipmentAttributeSet()
 	InitCooldown(3.0f);          // Default cooldown: 3 seconds
 	InitDamageResistance(0.0f);  // Default: No resistance (full damage taken)
 	InitBurrowMaxTime(5.0f);     // Default: 5 seconds of burrow time
+	InitHarpoonDamage(10.f);
+	InitCannonDamage(25.0f);
+	InitBallLightningDamage(30.f);
 }

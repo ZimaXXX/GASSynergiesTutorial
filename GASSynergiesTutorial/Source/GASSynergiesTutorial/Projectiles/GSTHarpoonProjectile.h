@@ -1,10 +1,12 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemComponent.h"
 
 #include "GameFramework/Actor.h"
 #include "GSTHarpoonProjectile.generated.h"
 
+class UGSTEquipmentAttributeSet;
 class UGameplayEffect;
 class UCableComponent;
 class USphereComponent;
@@ -44,6 +46,8 @@ private:
 	TObjectPtr<AActor> OwnerSkimmer;
 
 	float PullVelocityMultiplier = 1.f;
+	UAbilitySystemComponent* OwnerASC;
+	const UGSTEquipmentAttributeSet* OwnerAttributes;
 
 	/** Checks if the hit surface has the Material.Rock tag */
 	bool IsValidHarpoonSurface(const FHitResult& Hit) const;
@@ -54,7 +58,7 @@ private:
 
 	/** Damage amount applied when harpoon hits an enemy */
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	float DamageAmount = 10.0f;
+	float BaseDamage = 10.0f;
 
 	void ApplyDamageToEnemy(AActor* HitEnemy);
 };
