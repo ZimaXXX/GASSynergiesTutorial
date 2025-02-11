@@ -39,15 +39,20 @@ AGSTHarpoonProjectile::AGSTHarpoonProjectile()
     CableComponent->SetHiddenInGame(false);  // Ensure visibility
 }
 
-void AGSTHarpoonProjectile::InitializeProjectile(AActor* InOwner, float Speed, float Range, float InPullVelocityMultiplier)
-{
+void AGSTHarpoonProjectile::InitializeProjectile(AActor* InOwner, float Speed, float InPullVelocityMultiplier)
+{   
     OwnerSkimmer = InOwner;
     ProjectileMovement->InitialSpeed = Speed;
     ProjectileMovement->MaxSpeed = Speed;
     PullVelocityMultiplier = InPullVelocityMultiplier;
-    CableComponent->CableLength = Range;
+    float AttributeRange = BaseRange;
+    if (OwnerAttributes && OwnerASC)
+    {
+        AttributeRange = OwnerAttributes->GetHarpoonRange();
+    }
+    CableComponent->CableLength = AttributeRange;
 
-    SetLifeSpan(Range / Speed); // Destroy after reaching range
+    SetLifeSpan(AttributeRange / Speed); // Destroy after reaching range
 
     if (OwnerSkimmer)
     {
@@ -78,10 +83,16 @@ void AGSTHarpoonProjectile::BeginPlay()
 
 bool AGSTHarpoonProjectile::IsValidHarpoonSurface(const FHitResult& Hit) const
 {
+    int32 AttributeHarpoonHardnessLevel = BaseHardnessLevel;
+    if (OwnerAttributes && OwnerASC)
+    {
+        AttributeHarpoonHardnessLevel = OwnerAttributes->GetHarpoonHardness();
+    }
+    FGameplayTagContainer AllowedTags = ReceiveGetAllowedMaterialTags(AttributeHarpoonHardnessLevel);
     if (Hit.PhysMaterial.IsValid())
     {
         UGSTPhysicalMaterialWithTags* PhysMat = Cast<UGSTPhysicalMaterialWithTags>(Hit.PhysMaterial.Get());
-        if (PhysMat && PhysMat->MaterialTags.HasTag(FGameplayTag::RequestGameplayTag("Material.Rock")))
+        if (PhysMat && AllowedTags.HasAll(PhysMat->MaterialTags))
         {
             return true;
         }

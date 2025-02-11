@@ -20,7 +20,10 @@ class GASSYNERGIESTUTORIAL_API AGSTHarpoonProjectile : public AActor
 public:    
 	AGSTHarpoonProjectile();
 
-	void InitializeProjectile(AActor* InOwner, float Speed, float Range, float InPullVelocityMultiplier);
+	void InitializeProjectile(AActor* InOwner, float Speed, float InPullVelocityMultiplier);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	FGameplayTagContainer ReceiveGetAllowedMaterialTags(int32 InHardnessLevel) const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -46,9 +49,13 @@ private:
 	TObjectPtr<AActor> OwnerSkimmer;
 
 	float PullVelocityMultiplier = 1.f;
-	UAbilitySystemComponent* OwnerASC;
-	const UGSTEquipmentAttributeSet* OwnerAttributes;
 
+	UPROPERTY()
+	UAbilitySystemComponent* OwnerASC;
+
+	UPROPERTY()
+	const UGSTEquipmentAttributeSet* OwnerAttributes;
+	
 	/** Checks if the hit surface has the Material.Rock tag */
 	bool IsValidHarpoonSurface(const FHitResult& Hit) const;
 	
@@ -59,6 +66,12 @@ private:
 	/** Damage amount applied when harpoon hits an enemy */
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	float BaseDamage = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Range")
+	float BaseRange = 1500.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Hardness")
+	int32 BaseHardnessLevel = 1500.0f;
 
 	void ApplyDamageToEnemy(AActor* HitEnemy);
 };

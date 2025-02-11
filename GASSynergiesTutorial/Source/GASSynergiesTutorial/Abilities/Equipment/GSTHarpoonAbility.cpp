@@ -57,7 +57,7 @@ void UGSTHarpoonAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
     if (Harpoon)
     {
-        Harpoon->InitializeProjectile(Skimmer, HarpoonSpeed, HarpoonRange, PullVelocityMultiplier);
+        Harpoon->InitializeProjectile(Skimmer, HarpoonSpeed, PullVelocityMultiplier);
     }
     EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }

@@ -99,7 +99,7 @@ void UGSTCannonAbility::FireCannon(AActor* TargetActor)
         const UGSTEquipmentAttributeSet* Attributes = ASC->GetSet<UGSTEquipmentAttributeSet>();
         if (Attributes)
         {
-            float FireRate = Attributes->GetFireRate();
+            float FireRate = Attributes->GetCannonFireRate();
             float FireCooldown = (FireRate > 0.0f) ? (1.0f / FireRate) : 1.0f;
             GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &UGSTCannonAbility::CheckIfCanFire, FireCooldown, false);
         }

@@ -2,12 +2,28 @@
 
 UGSTEquipmentAttributeSet::UGSTEquipmentAttributeSet()
 {
-	InitFireRate(1.0f);          // Default fire rate: 1 shot per second
-	InitDamage(10.0f);           // Default base damage: 10
-	InitCooldown(3.0f);          // Default cooldown: 3 seconds
+	//General
 	InitDamageResistance(0.0f);  // Default: No resistance (full damage taken)
-	InitBurrowMaxTime(5.0f);     // Default: 5 seconds of burrow time
-	InitHarpoonDamage(10.f);
-	InitCannonDamage(25.0f);
+	
+	//Cannon
+	InitCannonFireRate(1.0f);
+	InitCannonDamage(10.0f);
+
+	//Burrow
+	InitBurrowMaxTime(5.0f);    
+	InitBurrowCooldown(3.0f);
+
+	//BallLightning
 	InitBallLightningDamage(30.f);
+	InitBallLightningCooldown(3.f);
+
+	//Harpoon
+	InitHarpoonDamage(10.f);
+	InitHarpoonRange(1000.0f);
+	InitHarpoonHardness(1.f);
+	InitHarpoonCooldown(3.f);
+
+	//Exploding Barrel
+	InitExplodingBarrelCooldown(3.f);
+	InitExplodingBarrelDamage(30.f);
 }
