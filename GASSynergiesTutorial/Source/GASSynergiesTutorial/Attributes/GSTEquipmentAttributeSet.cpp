@@ -16,6 +16,7 @@ UGSTEquipmentAttributeSet::UGSTEquipmentAttributeSet()
 	//BallLightning
 	InitBallLightningDamage(30.f);
 	InitBallLightningCooldown(3.f);
+	InitBallLightningCount(1.f);
 
 	//Harpoon
 	InitHarpoonDamage(10.f);

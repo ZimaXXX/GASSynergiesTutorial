@@ -2,38 +2,23 @@
 #include <GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h>
 #include "GameFramework/Actor.h"
 #include "Components/PrimitiveComponent.h"
-#include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
-#include "Kismet/KismetSystemLibrary.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 
 UGSTEquipmentAbility::UGSTEquipmentAbility()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 }
 
-bool UGSTEquipmentAbility::IsSkimmerOverMaterial(FGameplayTag MaterialTag)
+void UGSTEquipmentAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	const FGameplayEventData* TriggerEventData)
 {
-	if (AActor* OwnerActor = GetOwningActorFromActorInfo())
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+	AActor* OwnerActor = ActorInfo->OwnerActor.Get();
+	if (OwnerActor)
 	{
-		FVector StartLocation = OwnerActor->GetActorLocation();
-		FVector EndLocation = StartLocation + FVector(0, 0, -500); // Raycast 500 units downward
-
-		FHitResult HitResult;
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.bTraceComplex = true;
-		CollisionParams.AddIgnoredActor(OwnerActor);
-		CollisionParams.bReturnPhysicalMaterial = true;
-
-		// Perform a LineTrace downward to check surface below the skimmer
-		if (OwnerActor->GetWorld()->LineTraceSingleByChannel(
-			HitResult, StartLocation, EndLocation, ECC_Visibility, CollisionParams))
-		{
-			UGSTPhysicalMaterialWithTags* PhysMat = Cast<UGSTPhysicalMaterialWithTags>(HitResult.PhysMaterial.Get());
-			if (PhysMat && PhysMat->MaterialTags.HasTag(MaterialTag))
-			{
-				return true;
-			}
-		}
+		OwnerASC = OwnerActor->FindComponentByClass<UAbilitySystemComponent>();
+		OwnerAttributes = Cast<UGSTEquipmentAttributeSet>(OwnerASC->GetAttributeSet(UGSTEquipmentAttributeSet::StaticClass()));
 	}
-	return false;
 }

@@ -57,8 +57,7 @@ void UGSTJawsAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
         {
             
             // Get the max burrow time from attributes
-            const UGSTEquipmentAttributeSet* Attributes = Cast<UGSTEquipmentAttributeSet>(ASC->GetAttributeSet(UGSTEquipmentAttributeSet::StaticClass()));
-            float BurrowDuration = Attributes ? Attributes->BurrowMaxTime.GetCurrentValue() : 5.0f; // Default: 5 seconds
+            float BurrowDuration = OwnerAttributes ? OwnerAttributes->BurrowMaxTime.GetCurrentValue() : 5.0f; // Default: 5 seconds
 
             // Apply burrow effect with dynamic duration
             FGameplayEffectSpecHandle EffectSpec = ASC->MakeOutgoingSpec(BurrowEffect, 1.0f, ASC->MakeEffectContext());

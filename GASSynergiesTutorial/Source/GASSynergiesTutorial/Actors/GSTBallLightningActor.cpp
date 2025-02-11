@@ -18,14 +18,21 @@ AGSTBallLightningActor::AGSTBallLightningActor()
 	LightningEffect->SetupAttachment(RootComponent);
 }
 
-void AGSTBallLightningActor::InitializeBallLightning(AActor* InOwner, float InLifetime, float InOrbitRadius, float InOrbitSpeed)
+void AGSTBallLightningActor::InitializeBallLightning(AActor* InOwner, float InLifetime, float InOrbitRadius, float InOrbitSpeed, float InAngleOffset, TArray<AGSTBallLightningActor*> ActiveLightnings)
 {
 	OwnerSkimmer = InOwner;
 	Lifetime = InLifetime;
 	OrbitRadius = InOrbitRadius;
 	OrbitSpeed = InOrbitSpeed;
+	AngleOffset = InAngleOffset;
 	CollisionComponent->IgnoreActorWhenMoving(OwnerSkimmer, true);
-
+	for (AGSTBallLightningActor* ActiveLightning : ActiveLightnings)
+	{
+		if(ActiveLightning && ActiveLightning != this)
+		{
+			CollisionComponent->IgnoreActorWhenMoving(ActiveLightning, true);
+		}
+	}
 	GetWorldTimerManager().SetTimer(LifetimeTimerHandle, this, &AGSTBallLightningActor::DestroyBallLightning, Lifetime, false);
 }
 
@@ -40,7 +47,7 @@ void AGSTBallLightningActor::Tick(float DeltaTime)
 
 	if (OwnerSkimmer)
 	{
-		float Angle = GetWorld()->TimeSeconds * OrbitSpeed;
+		float Angle = GetWorld()->TimeSeconds * OrbitSpeed + AngleOffset;
 		FVector NewLocation = OwnerSkimmer->GetActorLocation() + FVector(FMath::Cos(Angle) * OrbitRadius, FMath::Sin(Angle) * OrbitRadius, 50.0f);
 		SetActorLocation(NewLocation);
 	}

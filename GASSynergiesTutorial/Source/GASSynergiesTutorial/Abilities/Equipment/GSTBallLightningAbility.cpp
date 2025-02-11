@@ -1,6 +1,7 @@
 ﻿#include "GSTBallLightningAbility.h"
 #include "AbilitySystemComponent.h"
 #include "GASSynergiesTutorial/Actors/GSTBallLightningActor.h"
+#include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "GASSynergiesTutorial/Core/GSTCharacter.h"
 
 UGSTBallLightningAbility::UGSTBallLightningAbility()
@@ -32,16 +33,25 @@ void UGSTBallLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle 
         return;
     }
 
-    FVector SpawnLocation = Skimmer->GetActorLocation() + FVector(0, 0, 50.0f);
+    int32 BallCount = FMath::Min(OwnerAttributes->GetBallLightningCount(), 4);
 
-    AGSTBallLightningActor* BallLightning = GetWorld()->SpawnActor<AGSTBallLightningActor>(
-        BallLightningClass, SpawnLocation, FRotator::ZeroRotator);
-
-    if (BallLightning)
+    for(int i = 0; i < BallCount; i++)
     {
-        BallLightning->InitializeBallLightning(Skimmer, BallLightningDuration, OrbitRadius, OrbitSpeed);
-        BallLightning->OnBallLightningDestroyed.AddDynamic(this, &UGSTBallLightningAbility::OnBallLightningDestroyed);
-        ActiveBallLightnings.Add(BallLightning);
+        FVector Offset = FVector(0, 0, 50.0f);
+        
+        FVector SpawnLocation = Skimmer->GetActorLocation() + Offset;
+        AGSTBallLightningActor* BallLightning = GetWorld()->SpawnActor<AGSTBallLightningActor>(
+    BallLightningClass, SpawnLocation, FRotator::ZeroRotator);
+
+        if (BallLightning)
+        {
+            ActiveBallLightnings.Add(BallLightning);
+        }
+    }
+    for(int i = 0; i < ActiveBallLightnings.Num(); i++)
+    {
+        ActiveBallLightnings[i]->InitializeBallLightning(Skimmer, BallLightningDuration, OrbitRadius, OrbitSpeed, i * 90, ActiveBallLightnings);
+        ActiveBallLightnings[i]->OnBallLightningDestroyed.AddDynamic(this, &UGSTBallLightningAbility::OnBallLightningDestroyed);
     }
 }
 

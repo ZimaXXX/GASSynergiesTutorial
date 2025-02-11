@@ -22,11 +22,6 @@ void UGSTUpgradeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
     }
 
     UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
-    // if (!ASC || !UpgradeEffect)
-    // {
-    //     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-    //     return;
-    // }
 
     // Apply the Upgrade Effect
     FGameplayEffectSpecHandle EffectSpec = ASC->MakeOutgoingSpec(UpgradeEffect, 1.0f, ASC->MakeEffectContext());

@@ -7,6 +7,7 @@
 
 #include "GSTEquipmentAbility.generated.h"
 
+class UGSTEquipmentAttributeSet;
 /**
  * 
  */
@@ -19,6 +20,13 @@ public:
 	UGSTEquipmentAbility();
 
 protected:
-	/** Checks if the skimmer is over a surface with a specific GameplayTag */
-	bool IsSkimmerOverMaterial(FGameplayTag MaterialTag);
+	
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	
+	UPROPERTY()
+	UAbilitySystemComponent* OwnerASC;
+
+	UPROPERTY()
+	const UGSTEquipmentAttributeSet* OwnerAttributes;
 };

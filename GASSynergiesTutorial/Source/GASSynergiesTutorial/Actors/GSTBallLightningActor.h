@@ -17,9 +17,12 @@ class GASSYNERGIESTUTORIAL_API AGSTBallLightningActor : public AActor
 public:    
 	AGSTBallLightningActor();
 
-	void InitializeBallLightning(AActor* InOwner, float InLifetime, float InOrbitRadius, float InOrbitSpeed);
+	void InitializeBallLightning(AActor* InOwner, float InLifetime, float InOrbitRadius, float InOrbitSpeed, float InAngleOffset, TArray<
+	                             AGSTBallLightningActor*>
+	                             ActiveLightnings);
 	
 	FOnBallLightningDestroyed OnBallLightningDestroyed;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -43,7 +46,8 @@ private:
 
 	float OrbitRadius = 200.0f;
 	float OrbitSpeed = 100.0f;
-	float Lifetime;
+	float Lifetime = 0.f;
+	float AngleOffset = 0.f;
 
 	FTimerHandle LifetimeTimerHandle;
 

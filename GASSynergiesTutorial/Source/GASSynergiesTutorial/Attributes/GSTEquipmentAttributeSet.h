@@ -74,6 +74,10 @@ public:
 	FGameplayAttributeData BallLightningDamage;
 	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, BallLightningDamage);
 
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
+	FGameplayAttributeData BallLightningCount;
+	ATTRIBUTE_ACCESSORS(UGSTEquipmentAttributeSet, BallLightningCount);
+
 	/** Ability cooldown time */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	FGameplayAttributeData BallLightningCooldown;
