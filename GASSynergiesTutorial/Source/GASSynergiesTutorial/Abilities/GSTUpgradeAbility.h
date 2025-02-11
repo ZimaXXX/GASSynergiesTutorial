@@ -31,4 +31,8 @@ private:
 
     /** Handle for the applied GameplayEffect */
     FActiveGameplayEffectHandle UpgradeEffectHandle;
+
+public:
+    UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Upgrade")
+    FName FriendlyName;
 };

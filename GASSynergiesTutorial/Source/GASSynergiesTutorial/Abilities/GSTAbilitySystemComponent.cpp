@@ -4,6 +4,24 @@
 #include "GSTAbilitySystemComponent.h"
 
 
+void UGSTAbilitySystemComponent::BroadcastAbilityEndedCallbacksBP(UGameplayAbility* GameplayAbility) const
+{
+	BP_AbilityEndedCallback.Broadcast(GameplayAbility);
+	BP_AbilityChangedCallback.Broadcast(GameplayAbility, false);
+}
+
+void UGSTAbilitySystemComponent::BroadcastOnAbilityActivatedBP(UGameplayAbility* GameplayAbility) const
+{
+	BP_AbilityActivatedCallback.Broadcast(GameplayAbility);
+	BP_AbilityChangedCallback.Broadcast(GameplayAbility, true);
+}
+
+void UGSTAbilitySystemComponent::InitializationCompleted()
+{
+	bIsInitialized = true;
+	OnAbilitySystemInitializedDelegate.Broadcast();
+}
+
 // Sets default values for this component's properties
 UGSTAbilitySystemComponent::UGSTAbilitySystemComponent()
 {
@@ -12,6 +30,8 @@ UGSTAbilitySystemComponent::UGSTAbilitySystemComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
+	AbilityEndedCallbacks.AddUObject(this, &UGSTAbilitySystemComponent::BroadcastAbilityEndedCallbacksBP);
+	AbilityActivatedCallbacks.AddUObject(this, &UGSTAbilitySystemComponent::BroadcastOnAbilityActivatedBP);
 }
 
 

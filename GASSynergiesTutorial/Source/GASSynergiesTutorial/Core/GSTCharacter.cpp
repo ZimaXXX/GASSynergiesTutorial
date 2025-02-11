@@ -84,6 +84,7 @@ void AGSTCharacter::BeginPlay()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 		AbilitySystemComponent->InitStats(UGSTEquipmentAttributeSet::StaticClass(), nullptr);
 	}
+	AbilitySystemComponent->InitializationCompleted();
 }
 
 bool AGSTCharacter::IsSkimmerOverMaterial(FGameplayTag MaterialTag) const

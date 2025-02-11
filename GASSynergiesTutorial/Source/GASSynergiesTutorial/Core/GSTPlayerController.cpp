@@ -2,24 +2,12 @@
 
 
 #include "GSTPlayerController.h"
-#include "EnhancedInputComponent.h"
-#include "GSTCharacter.h"
-#include "GASSynergiesTutorial/Abilities/GSTAbilitySystemComponent.h"
 
-void AGSTPlayerController::SetupInputComponent()
+void AGSTPlayerController::BeginPlay()
 {
-	Super::SetupInputComponent();
-	
-	// Get character reference
-	AGSTCharacter* GSTCharacter = Cast<AGSTCharacter>(GetPawn());
-	if (!GSTCharacter || !GSTCharacter->GetAbilitySystemComponent()) return;
+	Super::BeginPlay();
 
-	UEnhancedInputComponent* EnhancedInputComp = Cast<UEnhancedInputComponent>(InputComponent);
-	if (!EnhancedInputComp) return;
-
-	UGSTAbilitySystemComponent* ASC = Cast<UGSTAbilitySystemComponent>(GSTCharacter->GetAbilitySystemComponent());
-	if (!ASC) return;
-
-	// Bind ability activation to input
-	//EnhancedInputComp->BindAction(/* YourActionMapping */, ETriggerEvent::Started, ASC, &UAbilitySystemComponent::AbilityLocalInputPressed);
+	FInputModeGameAndUI InputData;
+	InputData.SetHideCursorDuringCapture(false);
+	SetInputMode(InputData);
 }
