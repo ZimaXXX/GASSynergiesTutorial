@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GASSynergiesTutorial/Projectiles/GSTProjectileBase.h"
 #include "GSTBallLightningActor.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBallLightningDestroyed, AGSTBallLightningActor*, BallLightning);
@@ -10,7 +11,7 @@ class USphereComponent;
 class UNiagaraComponent;
 
 UCLASS()
-class GASSYNERGIESTUTORIAL_API AGSTBallLightningActor : public AActor
+class GASSYNERGIESTUTORIAL_API AGSTBallLightningActor : public AGSTProjectileBase
 {
 	GENERATED_BODY()
 
@@ -28,6 +29,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
+
+	virtual float GetDamageFromAttribute() override;
 
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,

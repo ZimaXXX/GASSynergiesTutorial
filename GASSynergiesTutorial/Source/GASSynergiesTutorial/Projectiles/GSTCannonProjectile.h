@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
+#include "GSTProjectileBase.h"
 #include "GameFramework/Actor.h"
 #include "GSTCannonProjectile.generated.h"
 
@@ -9,21 +10,22 @@ class UProjectileMovementComponent;
 class USphereComponent;
 
 UCLASS()
-class GASSYNERGIESTUTORIAL_API AGSTCannonProjectile : public AActor
+class GASSYNERGIESTUTORIAL_API AGSTCannonProjectile : public AGSTProjectileBase
 {
 	GENERATED_BODY()
-    
-public:    
+
+public:
 	AGSTCannonProjectile();
 
 	void InitializeProjectile(AActor* InOwner, float Range);
 
 protected:
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
-			   UPrimitiveComponent* OtherComp, FVector NormalImpulse, 
-			   const FHitResult& Hit);
-
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+	           UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+	           const FHitResult& Hit);
+	
+	virtual float GetDamageFromAttribute() override;
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -36,12 +38,4 @@ private:
 	AActor* OwnerActor;
 
 	float MaxRange;
-	
-	/** Damage amount applied on hit */
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	float DamageAmount = 25.0f;
-
-	/** The GameplayEffect applied for damage */
-	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
-	TSubclassOf<UGameplayEffect> DamageEffectClass;
 };

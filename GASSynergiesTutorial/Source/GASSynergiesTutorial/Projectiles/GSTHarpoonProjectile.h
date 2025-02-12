@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "GSTProjectileBase.h"
 
 #include "GameFramework/Actor.h"
 #include "GSTHarpoonProjectile.generated.h"
@@ -13,10 +14,10 @@ class USphereComponent;
 class UProjectileMovementComponent;
 
 UCLASS(Blueprintable, BlueprintType)
-class GASSYNERGIESTUTORIAL_API AGSTHarpoonProjectile : public AActor
+class GASSYNERGIESTUTORIAL_API AGSTHarpoonProjectile : public AGSTProjectileBase
 {
 	GENERATED_BODY()
-    
+
 public:    
 	AGSTHarpoonProjectile();
 
@@ -31,6 +32,7 @@ protected:
 						   UPrimitiveComponent* OtherComp, bool bSelfMoved,
 						   FVector HitLocation, FVector HitNormal, FVector NormalImpulse,
 						   const FHitResult& Hit) override;
+	virtual float GetDamageFromAttribute() override;
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -49,29 +51,13 @@ private:
 	TObjectPtr<AActor> OwnerSkimmer;
 
 	float PullVelocityMultiplier = 1.f;
-
-	UPROPERTY()
-	UAbilitySystemComponent* OwnerASC;
-
-	UPROPERTY()
-	const UGSTEquipmentAttributeSet* OwnerAttributes;
 	
 	/** Checks if the hit surface has the Material.Rock tag */
 	bool IsValidHarpoonSurface(const FHitResult& Hit) const;
 	
-	/** The GameplayEffect to apply for damage */
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	TSubclassOf<UGameplayEffect> DamageEffectClass;
-
-	/** Damage amount applied when harpoon hits an enemy */
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	float BaseDamage = 10.0f;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Range")
 	float BaseRange = 1500.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Hardness")
 	int32 BaseHardnessLevel = 1500.0f;
-
-	void ApplyDamageToEnemy(AActor* HitEnemy);
 };

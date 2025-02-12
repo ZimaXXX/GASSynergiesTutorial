@@ -2,6 +2,8 @@
 #include "Components/SphereComponent.h"
 #include "NiagaraComponent.h"
 #include "GameFramework/Actor.h"
+#include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
+#include "GASSynergiesTutorial/Enemy/GSTEnemyPawn.h"
 
 AGSTBallLightningActor::AGSTBallLightningActor()
 {
@@ -59,13 +61,26 @@ void AGSTBallLightningActor::Destroyed()
 	Super::Destroyed();	
 }
 
+float AGSTBallLightningActor::GetDamageFromAttribute()
+{
+	return OwnerAttributes->GetBallLightningDamage();
+}
+
 void AGSTBallLightningActor::OnHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
                                    bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OwnerSkimmer && OtherActor && OtherActor != OwnerSkimmer)
 	{
-		OtherActor->Destroy();
+		if(AGSTEnemyPawn* Enemy = Cast<AGSTEnemyPawn>(OtherActor))
+		{
+			ApplyDamageToEnemy(Enemy);
+		}
+		else
+		{
+			OtherActor->Destroy();
+		}
+		DestroyBallLightning();
 	}
 }
 

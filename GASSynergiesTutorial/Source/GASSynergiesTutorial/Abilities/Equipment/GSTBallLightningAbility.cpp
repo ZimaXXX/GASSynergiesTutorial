@@ -50,7 +50,7 @@ void UGSTBallLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle 
     }
     for(int i = 0; i < ActiveBallLightnings.Num(); i++)
     {
-        ActiveBallLightnings[i]->InitializeBallLightning(Skimmer, BallLightningDuration, OrbitRadius, OrbitSpeed, i * 90, ActiveBallLightnings);
+        ActiveBallLightnings[i]->InitializeBallLightning(Skimmer, BallLightningDuration, OrbitRadius, OrbitSpeed, i * PI/2, ActiveBallLightnings);
         ActiveBallLightnings[i]->OnBallLightningDestroyed.AddDynamic(this, &UGSTBallLightningAbility::OnBallLightningDestroyed);
     }
 }
