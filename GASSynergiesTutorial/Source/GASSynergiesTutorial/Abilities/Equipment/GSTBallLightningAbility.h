@@ -39,10 +39,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "BallLightning")
 	TSubclassOf<AGSTBallLightningActor> BallLightningClass;
 
-	/** The duration for which the ball lightning remains active */
-	UPROPERTY(EditDefaultsOnly, Category = "BallLightning")
-	float BallLightningDuration = 5.0f;
-
 	UPROPERTY(EditDefaultsOnly, Category = "BallLightning")
 	float OrbitSpeed = 100.f;
 

@@ -3,6 +3,8 @@
 #include "GSTCharacter.h"
 
 #include "AbilitySystemComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
@@ -51,7 +53,7 @@ AGSTCharacter::AGSTCharacter()
 	CameraComponent->bUsePawnControlRotation = false;	// Camera does not rotate relative to arm
 
 	// Movement
-	MoveSpeed = 1000.0f;
+	MoveSpeed = 300.0f;
 	// Weapon
 	GunOffset = FVector(90.f, 0.f, 0.f);
 	FireRate = 0.1f;
@@ -67,6 +69,7 @@ AGSTCharacter::AGSTCharacter()
 
 	FloatingMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingMovement"));
 	FloatingMovement->MaxSpeed = 1200.0f;
+	
 }
 
 void AGSTCharacter::BeginPlay()
@@ -85,6 +88,14 @@ void AGSTCharacter::BeginPlay()
 		AbilitySystemComponent->InitStats(UGSTEquipmentAttributeSet::StaticClass(), nullptr);
 	}
 	AbilitySystemComponent->InitializationCompleted();
+	
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
 }
 
 bool AGSTCharacter::IsSkimmerOverMaterial(FGameplayTag MaterialTag) const
@@ -116,25 +127,45 @@ void AGSTCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 {
 	check(PlayerInputComponent);
 
-	// set up gameplay key bindings
-	PlayerInputComponent->BindAxis(MoveForwardBinding);
-	PlayerInputComponent->BindAxis(MoveRightBinding);
-	PlayerInputComponent->BindAxis(FireForwardBinding);
-	PlayerInputComponent->BindAxis(FireRightBinding);
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	if (!EnhancedInputComponent || !DefaultMappingContext)
+	{
+		return;
+	}
+
+	// Iterate through all Input Actions inside the Mapping Context and bind them
+	for (const FEnhancedActionKeyMapping& Mapping : DefaultMappingContext->GetMappings())
+	{
+		if (Mapping.Action->GetFName() == "IA_Move")
+		{
+			EnhancedInputComponent->BindAction(Mapping.Action, ETriggerEvent::Triggered, this, &AGSTCharacter::Move);
+		}
+		else if (Mapping.Action->GetFName() == "IA_Look")
+		{
+			EnhancedInputComponent->BindAction(Mapping.Action, ETriggerEvent::Triggered, this, &AGSTCharacter::Look);
+		}
+	}
+	// // set up gameplay key bindings
+	// PlayerInputComponent->BindAxis(MoveForwardBinding);
+	// PlayerInputComponent->BindAxis(MoveRightBinding);
+	// PlayerInputComponent->BindAxis(FireForwardBinding);
+	// PlayerInputComponent->BindAxis(FireRightBinding);
 }
 
-void AGSTCharacter::Tick(float DeltaSeconds)
+void AGSTCharacter::Move(const FInputActionValue& Value)
 {
-	// Find movement direction
-	const float ForwardValue = GetInputAxisValue(MoveForwardBinding);
-	const float RightValue = GetInputAxisValue(MoveRightBinding);
+	FVector2D MoveVector = Value.Get<FVector2D>();
 
+	// Find movement direction
+	const float ForwardValue = MoveVector.Y;
+	const float RightValue = MoveVector.X;
+	
 	// Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
 	const FVector MoveDirection = FVector(ForwardValue, RightValue, 0.f).GetClampedToMaxSize(1.0f);
-
+	
 	// Calculate  movement
-	const FVector Movement = MoveDirection * MoveSpeed * DeltaSeconds;
-
+	const FVector Movement = MoveDirection * MoveSpeed * GetWorld()->GetDeltaSeconds();
+	
 	// If non-zero size, move this actor
 	if (Movement.SizeSquared() > 0.0f)
 	{
@@ -149,14 +180,53 @@ void AGSTCharacter::Tick(float DeltaSeconds)
 			RootComponent->MoveComponent(Deflection, NewRotation, true);
 		}
 	}
-	
-	// Create fire direction vector
-	const float FireForwardValue = GetInputAxisValue(FireForwardBinding);
-	const float FireRightValue = GetInputAxisValue(FireRightBinding);
-	const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.f);
+}
 
-	// Try and fire a shot
-	FireShot(FireDirection);
+void AGSTCharacter::Look(const FInputActionValue& Value)
+{
+	// FVector2D LookVector = Value.Get<FVector2D>();
+	//
+	// if (LookVector.SizeSquared() > 0.1f) // Avoid tiny inputs
+	// {
+	// 	FRotator NewRotation = FRotator(0.f, FMath::Atan2(LookVector.X, LookVector.Y) * (180.f / PI), 0.f);
+	// 	SetActorRotation(NewRotation);
+	// }
+}
+
+void AGSTCharacter::Tick(float DeltaSeconds)
+{
+	// // Find movement direction
+	// const float ForwardValue = GetInputAxisValue(MoveForwardBinding);
+	// const float RightValue = GetInputAxisValue(MoveRightBinding);
+	//
+	// // Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
+	// const FVector MoveDirection = FVector(ForwardValue, RightValue, 0.f).GetClampedToMaxSize(1.0f);
+	//
+	// // Calculate  movement
+	// const FVector Movement = MoveDirection * MoveSpeed * DeltaSeconds;
+	//
+	// // If non-zero size, move this actor
+	// if (Movement.SizeSquared() > 0.0f)
+	// {
+	// 	const FRotator NewRotation = Movement.Rotation();
+	// 	FHitResult Hit(1.f);
+	// 	RootComponent->MoveComponent(Movement, NewRotation, true, &Hit);
+	// 	
+	// 	if (Hit.IsValidBlockingHit())
+	// 	{
+	// 		const FVector Normal2D = Hit.Normal.GetSafeNormal2D();
+	// 		const FVector Deflection = FVector::VectorPlaneProject(Movement, Normal2D) * (1.f - Hit.Time);
+	// 		RootComponent->MoveComponent(Deflection, NewRotation, true);
+	// 	}
+	// }
+	//
+	// // Create fire direction vector
+	// const float FireForwardValue = GetInputAxisValue(FireForwardBinding);
+	// const float FireRightValue = GetInputAxisValue(FireRightBinding);
+	// const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.f);
+	//
+	// // Try and fire a shot
+	// FireShot(FireDirection);
 }
 
 void AGSTCharacter::FireShot(FVector FireDirection)

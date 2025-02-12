@@ -48,6 +48,7 @@ void UGSTBallLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle 
             ActiveBallLightnings.Add(BallLightning);
         }
     }
+    float BallLightningDuration = OwnerAttributes->GetBallLightningDuration();
     for(int i = 0; i < ActiveBallLightnings.Num(); i++)
     {
         ActiveBallLightnings[i]->InitializeBallLightning(Skimmer, BallLightningDuration, OrbitRadius, OrbitSpeed, i * PI/2, ActiveBallLightnings);
