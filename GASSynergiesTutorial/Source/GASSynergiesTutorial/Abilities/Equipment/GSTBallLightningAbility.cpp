@@ -1,8 +1,8 @@
 ﻿#include "GSTBallLightningAbility.h"
 #include "AbilitySystemComponent.h"
-#include "GASSynergiesTutorial/Actors/GSTBallLightningActor.h"
 #include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "GASSynergiesTutorial/Core/GSTCharacter.h"
+#include "GASSynergiesTutorial/Projectiles/GSTBallLightningActor.h"
 
 UGSTBallLightningAbility::UGSTBallLightningAbility()
 {

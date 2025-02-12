@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "GameFramework/Actor.h"
+#include "GASSynergiesTutorial/Projectiles/GSTProjectileBase.h"
 #include "GSTExplodingBarrelActor.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBarrelExploded, AGSTExplodingBarrelActor*, Barrel);
@@ -11,7 +12,7 @@ class UStaticMeshComponent;
 class URadialForceComponent;
 
 UCLASS()
-class GASSYNERGIESTUTORIAL_API AGSTExplodingBarrelActor : public AActor
+class GASSYNERGIESTUTORIAL_API AGSTExplodingBarrelActor : public AGSTProjectileBase
 {
 	GENERATED_BODY()
     
@@ -28,6 +29,8 @@ protected:
 						   UPrimitiveComponent* OtherComp, bool bSelfMoved,
 						   FVector HitLocation, FVector HitNormal, FVector NormalImpulse,
 						   const FHitResult& Hit) override;
+	
+	virtual float GetDamageFromAttribute() override;
 
 private:
 	UPROPERTY(VisibleAnywhere)

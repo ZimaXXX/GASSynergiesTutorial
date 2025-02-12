@@ -1,7 +1,7 @@
 ﻿#include "GSTExplodingBarrelAbility.h"
 #include "AbilitySystemComponent.h"
-#include "GASSynergiesTutorial/Actors/GSTExplodingBarrelActor.h"
 #include "GASSynergiesTutorial/Core/GSTCharacter.h"
+#include "GASSynergiesTutorial/Projectiles/GSTExplodingBarrelActor.h"
 
 UGSTExplodingBarrelAbility::UGSTExplodingBarrelAbility()
 {
