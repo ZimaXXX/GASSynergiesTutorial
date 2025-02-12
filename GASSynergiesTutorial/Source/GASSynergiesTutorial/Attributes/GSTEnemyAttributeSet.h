@@ -6,6 +6,21 @@
 #include "GSTEquipmentAttributeSet.h"
 #include "GSTEnemyAttributeSet.generated.h"
 
+USTRUCT(BlueprintType)
+struct GASSYNERGIESTUTORIAL_API FAttributeInitData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	/** The attribute to initialize */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	FGameplayAttribute Attribute;
+
+	/** The default value of the attribute */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	float DefaultValue = 0.0f;
+};
+
+
 UCLASS()
 class GASSYNERGIESTUTORIAL_API UGSTEnemyAttributeSet : public UAttributeSet
 {

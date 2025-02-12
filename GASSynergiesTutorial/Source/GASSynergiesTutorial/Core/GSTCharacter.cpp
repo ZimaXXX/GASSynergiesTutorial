@@ -17,6 +17,7 @@
 #include "GASSynergiesTutorial/GASSynergiesTutorialProjectile.h"
 #include "GASSynergiesTutorial/Abilities/GSTAbilitySystemComponent.h"
 #include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
+#include "GASSynergiesTutorial/Attributes/GSTEnemyAttributeSet.h"
 #include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -83,8 +84,7 @@ void AGSTCharacter::BeginPlay()
 		{
 			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE, this));
 		}
-
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);		
 		AbilitySystemComponent->InitStats(UGSTEquipmentAttributeSet::StaticClass(), nullptr);
 	}
 	AbilitySystemComponent->InitializationCompleted();

@@ -91,6 +91,10 @@ protected:
 	/** Attribute Set for character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes")
 	UGSTEquipmentAttributeSet* AttributeSet;
+	
+	/** DataTable containing attribute values */
+	UPROPERTY(EditDefaultsOnly, Category = "Equipment")
+	UDataTable* EquipmentAttributesDataTable;
 
 	/** Default abilities granted on spawn */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
