@@ -1,13 +1,13 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "GSTCharacter.h"
-
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
+#include "Components/GSTEquipmentManagerComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -17,15 +17,10 @@
 #include "GASSynergiesTutorial/GASSynergiesTutorialProjectile.h"
 #include "GASSynergiesTutorial/Abilities/GSTAbilitySystemComponent.h"
 #include "GASSynergiesTutorial/Actors/GSTPhysicalMaterialWithTags.h"
-#include "GASSynergiesTutorial/Attributes/GSTEnemyAttributeSet.h"
 #include "GASSynergiesTutorial/Attributes/GSTEquipmentAttributeSet.h"
+#include "GASSynergiesTutorial/Data/GSTEquipmentDataAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
-
-const FName AGSTCharacter::MoveForwardBinding("MoveForward");
-const FName AGSTCharacter::MoveRightBinding("MoveRight");
-const FName AGSTCharacter::FireForwardBinding("FireForward");
-const FName AGSTCharacter::FireRightBinding("FireRight");
 
 AGSTCharacter::AGSTCharacter()
 {	
@@ -67,6 +62,8 @@ AGSTCharacter::AGSTCharacter()
 	// Ensure the AbilitySystemComponent replicates
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	
+	EquipmentManager = CreateDefaultSubobject<UGSTEquipmentManagerComponent>(TEXT("EquipmentManager"));
 
 	FloatingMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingMovement"));
 	FloatingMovement->MaxSpeed = 1200.0f;
@@ -80,12 +77,9 @@ void AGSTCharacter::BeginPlay()
 	// Grant default abilities
 	if (HasAuthority() && AbilitySystemComponent)
 	{
-		for (TSubclassOf<UGameplayAbility> AbilityClass : DefaultAbilities)
-		{
-			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE, this));
-		}
+		GrantDefaultAbilities();
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);		
-		AbilitySystemComponent->InitStats(UGSTEquipmentAttributeSet::StaticClass(), nullptr);
+		AbilitySystemComponent->InitStats(UGSTEquipmentAttributeSet::StaticClass(), EquipmentAttributesDataTable);
 	}
 	AbilitySystemComponent->InitializationCompleted();
 	
@@ -140,16 +134,7 @@ void AGSTCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInput
 		{
 			EnhancedInputComponent->BindAction(Mapping.Action, ETriggerEvent::Triggered, this, &AGSTCharacter::Move);
 		}
-		else if (Mapping.Action->GetFName() == "IA_Look")
-		{
-			EnhancedInputComponent->BindAction(Mapping.Action, ETriggerEvent::Triggered, this, &AGSTCharacter::Look);
-		}
 	}
-	// // set up gameplay key bindings
-	// PlayerInputComponent->BindAxis(MoveForwardBinding);
-	// PlayerInputComponent->BindAxis(MoveRightBinding);
-	// PlayerInputComponent->BindAxis(FireForwardBinding);
-	// PlayerInputComponent->BindAxis(FireRightBinding);
 }
 
 void AGSTCharacter::Move(const FInputActionValue& Value)
@@ -182,51 +167,9 @@ void AGSTCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void AGSTCharacter::Look(const FInputActionValue& Value)
-{
-	// FVector2D LookVector = Value.Get<FVector2D>();
-	//
-	// if (LookVector.SizeSquared() > 0.1f) // Avoid tiny inputs
-	// {
-	// 	FRotator NewRotation = FRotator(0.f, FMath::Atan2(LookVector.X, LookVector.Y) * (180.f / PI), 0.f);
-	// 	SetActorRotation(NewRotation);
-	// }
-}
-
 void AGSTCharacter::Tick(float DeltaSeconds)
 {
-	// // Find movement direction
-	// const float ForwardValue = GetInputAxisValue(MoveForwardBinding);
-	// const float RightValue = GetInputAxisValue(MoveRightBinding);
-	//
-	// // Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
-	// const FVector MoveDirection = FVector(ForwardValue, RightValue, 0.f).GetClampedToMaxSize(1.0f);
-	//
-	// // Calculate  movement
-	// const FVector Movement = MoveDirection * MoveSpeed * DeltaSeconds;
-	//
-	// // If non-zero size, move this actor
-	// if (Movement.SizeSquared() > 0.0f)
-	// {
-	// 	const FRotator NewRotation = Movement.Rotation();
-	// 	FHitResult Hit(1.f);
-	// 	RootComponent->MoveComponent(Movement, NewRotation, true, &Hit);
-	// 	
-	// 	if (Hit.IsValidBlockingHit())
-	// 	{
-	// 		const FVector Normal2D = Hit.Normal.GetSafeNormal2D();
-	// 		const FVector Deflection = FVector::VectorPlaneProject(Movement, Normal2D) * (1.f - Hit.Time);
-	// 		RootComponent->MoveComponent(Deflection, NewRotation, true);
-	// 	}
-	// }
-	//
-	// // Create fire direction vector
-	// const float FireForwardValue = GetInputAxisValue(FireForwardBinding);
-	// const float FireRightValue = GetInputAxisValue(FireRightBinding);
-	// const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.f);
-	//
-	// // Try and fire a shot
-	// FireShot(FireDirection);
+	Super::Tick(DeltaSeconds);
 }
 
 void AGSTCharacter::FireShot(FVector FireDirection)
@@ -272,6 +215,27 @@ void AGSTCharacter::OnBurrowStarted()
 	SetActorEnableCollision(false);
 	OriginalZ = GetActorLocation().Z;
 	BurrowedZ = OriginalZ - 200.0f; // Move down 200 units
+}
+
+void AGSTCharacter::GrantDefaultAbilities()
+{
+	if (!EquipmentDataAsset)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GSTCharacter: No EquipmentDataAsset assigned!"));
+		return;
+	}
+
+	// Grant Equipment Abilities
+	for (TSubclassOf<UGameplayAbility> AbilityClass : EquipmentDataAsset->DefaultEquipmentAbilities)
+	{
+		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityClass, 1, INDEX_NONE, this));
+	}
+
+	// Unlock Upgrade Abilities
+	for (TSubclassOf<UGameplayAbility> UpgradeAbilityClass : EquipmentDataAsset->DefaultUpgradeAbilities)
+	{
+		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(UpgradeAbilityClass, 1, INDEX_NONE, this));
+	}
 }
 
 void AGSTCharacter::StartBurrowing()

@@ -8,6 +8,8 @@
 #include "InputMappingContext.h"
 #include "GSTCharacter.generated.h"
 
+class UGSTEquipmentManagerComponent;
+class UGSTEquipmentDataAsset;
 class UFloatingPawnMovement;
 class UGameplayAbility;
 class UGSTEquipmentAttributeSet;
@@ -61,7 +63,6 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
 	// End Actor Interface
 
 	/* Fire a shot in the specified direction */
@@ -70,13 +71,7 @@ public:
 	/* Handler for the fire timer expiry */
 	void ShotTimerExpired();
 	void OnBurrowStarted();
-
-	// Static names for axis bindings
-	static const FName MoveForwardBinding;
-	static const FName MoveRightBinding;
-	static const FName FireForwardBinding;
-	static const FName FireRightBinding;
-
+	
 	/** Implement GAS interface */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
@@ -84,6 +79,10 @@ protected:
 	/** Ability System Component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	UGSTAbilitySystemComponent* AbilitySystemComponent;
+
+	/** Equipment Manager Component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+	UGSTEquipmentManagerComponent* EquipmentManager;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
 	UFloatingPawnMovement* FloatingMovement;
@@ -99,6 +98,12 @@ protected:
 	/** Default abilities granted on spawn */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Equipment")
+	UGSTEquipmentDataAsset* EquipmentDataAsset;
+
+	/** Grants default abilities defined in EquipmentDataAsset */
+	void GrantDefaultAbilities();
 
 private:
 
