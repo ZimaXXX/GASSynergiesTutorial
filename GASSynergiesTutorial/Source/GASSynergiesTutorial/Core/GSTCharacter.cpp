@@ -30,10 +30,6 @@ AGSTCharacter::AGSTCharacter()
 	RootComponent = ShipMeshComponent;
 	ShipMeshComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	ShipMeshComponent->SetStaticMesh(ShipMesh.Object);
-	
-	// Cache our sound effect
-	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/TwinStickFire.TwinStickFire"));
-	FireSound = FireAudio.Object;
 
 	// Create a camera boom...
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -50,10 +46,6 @@ AGSTCharacter::AGSTCharacter()
 
 	// Movement
 	MoveSpeed = 300.0f;
-	// Weapon
-	GunOffset = FVector(90.f, 0.f, 0.f);
-	FireRate = 0.1f;
-	bCanFire = true;
 
 	// Create GAS components
 	AbilitySystemComponent = CreateDefaultSubobject<UGSTAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
@@ -165,49 +157,6 @@ void AGSTCharacter::Move(const FInputActionValue& Value)
 			RootComponent->MoveComponent(Deflection, NewRotation, true);
 		}
 	}
-}
-
-void AGSTCharacter::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
-void AGSTCharacter::FireShot(FVector FireDirection)
-{
-	// If it's ok to fire again
-	if (bCanFire == true)
-	{
-		// If we are pressing fire stick in a direction
-		if (FireDirection.SizeSquared() > 0.0f)
-		{
-			const FRotator FireRotation = FireDirection.Rotation();
-			// Spawn projectile at an offset from this pawn
-			const FVector SpawnLocation = GetActorLocation() + FireRotation.RotateVector(GunOffset);
-
-			UWorld* const World = GetWorld();
-			if (World != nullptr)
-			{
-				// spawn the projectile
-				World->SpawnActor<AGASSynergiesTutorialProjectile>(SpawnLocation, FireRotation);
-			}
-
-			bCanFire = false;
-			World->GetTimerManager().SetTimer(TimerHandle_ShotTimerExpired, this, &AGSTCharacter::ShotTimerExpired, FireRate);
-
-			// try and play the sound if specified
-			if (FireSound != nullptr)
-			{
-				UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-			}
-
-			bCanFire = false;
-		}
-	}
-}
-
-void AGSTCharacter::ShotTimerExpired()
-{
-	bCanFire = true;
 }
 
 void AGSTCharacter::OnBurrowStarted()
