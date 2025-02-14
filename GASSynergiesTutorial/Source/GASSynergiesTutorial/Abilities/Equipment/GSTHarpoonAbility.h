@@ -30,9 +30,6 @@ protected:
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 private:
-	/** The harpoon projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category = "Harpoon")
-	TSubclassOf<AGSTHarpoonProjectile> HarpoonProjectileClass;
 
 	/** The initial speed of the harpoon */
 	UPROPERTY(EditDefaultsOnly, Category = "Harpoon")

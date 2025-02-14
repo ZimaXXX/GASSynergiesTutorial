@@ -2,12 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
+#include "GASSynergiesTutorial/Abilities/GSTEquipmentAbility.h"
 #include "GSTCannonAbility.generated.h"
 
 class AGSTCannonProjectile;
 
 UCLASS()
-class GASSYNERGIESTUTORIAL_API UGSTCannonAbility : public UGameplayAbility
+class GASSYNERGIESTUTORIAL_API UGSTCannonAbility : public UGSTEquipmentAbility
 {
     GENERATED_BODY()
 
@@ -32,10 +33,6 @@ private:
 
     /** Timer handle for continuously looking for enemies */
     FTimerHandle EnemyLookupTimerHandle;
-
-    /** The Cannon projectile class */
-    UPROPERTY(EditDefaultsOnly, Category = "Cannon")
-    TSubclassOf<AGSTCannonProjectile> CannonProjectileClass;
 
     /** Maximum range of the cannon */
     UPROPERTY(EditDefaultsOnly, Category = "Cannon")

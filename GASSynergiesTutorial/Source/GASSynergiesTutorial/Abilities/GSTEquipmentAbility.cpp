@@ -22,3 +22,16 @@ void UGSTEquipmentAbility::ActivateAbility(const FGameplayAbilitySpecHandle Hand
 		OwnerAttributes = Cast<UGSTEquipmentAttributeSet>(OwnerASC->GetAttributeSet(UGSTEquipmentAttributeSet::StaticClass()));
 	}
 }
+
+void UGSTEquipmentAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateEndAbility, bool bWasCancelled)
+{
+	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+		return;
+	}
+	
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}

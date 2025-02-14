@@ -27,7 +27,7 @@ void UGSTBallLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle 
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
     AGSTCharacter* Skimmer = Cast<AGSTCharacter>(ActorInfo->OwnerActor);
-    if (!Skimmer || !BallLightningClass)
+    if (!Skimmer || !ProjectileClass)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
         return;
@@ -41,7 +41,7 @@ void UGSTBallLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle 
         
         FVector SpawnLocation = Skimmer->GetActorLocation() + Offset;
         AGSTBallLightningActor* BallLightning = GetWorld()->SpawnActor<AGSTBallLightningActor>(
-    BallLightningClass, SpawnLocation, FRotator::ZeroRotator);
+    ProjectileClass, SpawnLocation, FRotator::ZeroRotator);
 
         if (BallLightning)
         {
@@ -72,11 +72,6 @@ void UGSTBallLightningAbility::OnBallLightningDestroyed(AGSTBallLightningActor* 
 void UGSTBallLightningAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
     const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
     bool bReplicateEndAbility, bool bWasCancelled)
-{
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Ball Lightning Ability failed to commit!"));
-    }
-    
+{    
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

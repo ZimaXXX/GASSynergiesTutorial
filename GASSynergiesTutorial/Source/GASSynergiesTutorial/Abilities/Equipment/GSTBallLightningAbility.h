@@ -35,9 +35,6 @@ protected:
 	void OnBallLightningDestroyed(AGSTBallLightningActor* BallLightning);
 	
 private:
-	/** The Ball Lightning actor class */
-	UPROPERTY(EditDefaultsOnly, Category = "BallLightning")
-	TSubclassOf<AGSTBallLightningActor> BallLightningClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "BallLightning")
 	float OrbitSpeed = 100.f;

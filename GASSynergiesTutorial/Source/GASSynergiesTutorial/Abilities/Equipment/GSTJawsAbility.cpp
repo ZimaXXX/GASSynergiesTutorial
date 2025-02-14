@@ -85,11 +85,6 @@ void UGSTJawsAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
                                  const FGameplayAbilityActivationInfo ActivationInfo, 
                                  bool bReplicateEndAbility, bool bWasCancelled)
 {
-
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))//commit on endability so cooldown starts to count from burrowing up
-    {
-        UE_LOG(LogTemp, Warning, TEXT("JawsAbility failed to commit!"));
-    }
     
     if(GetOwningActorFromActorInfo() && GetOwningActorFromActorInfo()->GetInstigatorController())//may fail on closing PIE
     {

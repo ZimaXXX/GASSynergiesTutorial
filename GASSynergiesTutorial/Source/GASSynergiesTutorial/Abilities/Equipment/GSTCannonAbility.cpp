@@ -17,12 +17,6 @@ void UGSTCannonAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                                         const FGameplayAbilityActivationInfo ActivationInfo,
                                         const FGameplayEventData* TriggerEventData)
 {
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
-        return;
-    }
-
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
     // Start continuous enemy lookup
@@ -62,7 +56,7 @@ void UGSTCannonAbility::CheckIfCanFire()
 void UGSTCannonAbility::FireCannon(AActor* TargetActor)
 {
     AGSTCharacter* Skimmer = Cast<AGSTCharacter>(GetCurrentActorInfo()->OwnerActor);
-    if (!Skimmer || !CannonProjectileClass)
+    if (!Skimmer || !ProjectileClass)
     {
         return;
     }
@@ -85,7 +79,7 @@ void UGSTCannonAbility::FireCannon(AActor* TargetActor)
     }
 
     AGSTCannonProjectile* Projectile = GetWorld()->SpawnActor<AGSTCannonProjectile>(
-        CannonProjectileClass, SpawnLocation, SpawnRotation);
+        ProjectileClass, SpawnLocation, SpawnRotation);
 
     if (Projectile)
     {

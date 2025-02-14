@@ -29,7 +29,7 @@ void UGSTExplodingBarrelAbility::ActivateAbility(const FGameplayAbilitySpecHandl
     SpawnedBarrels = 0;
     
     AGSTCharacter* Skimmer = Cast<AGSTCharacter>(ActorInfo->OwnerActor);
-    if (!Skimmer || !ExplodingBarrelClass)
+    if (!Skimmer || !ProjectileClass)
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
         return;
@@ -42,11 +42,6 @@ void UGSTExplodingBarrelAbility::EndAbility(const FGameplayAbilitySpecHandle Han
     const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
     bool bReplicateEndAbility, bool bWasCancelled)
 {
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Exploding Barrel Ability failed to commit!"));
-    }
-    
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -71,7 +66,7 @@ void UGSTExplodingBarrelAbility::SpawnBarrel()
     }
 
     AGSTCharacter* Skimmer = Cast<AGSTCharacter>(GetCurrentActorInfo()->OwnerActor);
-    if (!Skimmer || !ExplodingBarrelClass)
+    if (!Skimmer || !ProjectileClass)
     {
         return;
     }
@@ -80,7 +75,7 @@ void UGSTExplodingBarrelAbility::SpawnBarrel()
     FRotator SpawnRotation = FRotator::ZeroRotator;
 
     AGSTExplodingBarrelActor* Barrel = GetWorld()->SpawnActor<AGSTExplodingBarrelActor>(
-        ExplodingBarrelClass, SpawnLocation, SpawnRotation);
+        ProjectileClass, SpawnLocation, SpawnRotation);
 
     if (Barrel)
     {

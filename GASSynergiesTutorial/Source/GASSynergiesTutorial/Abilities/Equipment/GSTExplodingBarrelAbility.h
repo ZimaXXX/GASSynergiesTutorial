@@ -35,9 +35,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Exploding Barrel")
 	void SpawnBarrel();
 private:
-	/** The Exploding Barrel actor class */
-	UPROPERTY(EditDefaultsOnly, Category = "Exploding Barrel")
-	TSubclassOf<AGSTExplodingBarrelActor> ExplodingBarrelClass;
 
 	/** Maximum number of active barrels */
 	UPROPERTY(EditDefaultsOnly, Category = "Exploding Barrel")

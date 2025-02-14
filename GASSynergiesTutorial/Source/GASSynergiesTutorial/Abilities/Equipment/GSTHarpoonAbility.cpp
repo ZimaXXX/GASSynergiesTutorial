@@ -20,7 +20,7 @@ bool UGSTHarpoonAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Han
         return false;
     }
 
-    if (!HarpoonProjectileClass)
+    if (!ProjectileClass)
     {
         UE_LOG(LogTemp, Warning, TEXT("Harpoon Ability Failed: HarpoonProjectileClass is not set!"));
         return false;
@@ -53,7 +53,7 @@ void UGSTHarpoonAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
     SpawnParams.Instigator = Skimmer;
 
     AGSTHarpoonProjectile* Harpoon = GetWorld()->SpawnActor<AGSTHarpoonProjectile>(
-        HarpoonProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);
+        ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);
 
     if (Harpoon)
     {
@@ -65,10 +65,5 @@ void UGSTHarpoonAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 void UGSTHarpoonAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
     const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-    if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Harpoon Ability failed to commit!"));
-    }
-    
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
